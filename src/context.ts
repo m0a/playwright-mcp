@@ -36,7 +36,7 @@ const testDebug = debug('pw:mcp:test');
 export class Context {
   readonly tools: Tool[];
   readonly config: FullConfig;
-  private _browserContextPromise: Promise<{ browserContext: playwright.BrowserContext, close: () => Promise<void> }> | undefined;
+  private _browserContextPromise: Promise<{ browserContext: playwright.BrowserContext, close: () => Promise<void>, saveSession?: () => Promise<void> }> | undefined;
   private _browserContextFactory: BrowserContextFactory;
   private _tabs: Tab[] = [];
   private _currentTab: Tab | undefined;
@@ -50,6 +50,17 @@ export class Context {
     this.config = config;
     this._browserContextFactory = browserContextFactory;
     testDebug('create context');
+  }
+
+  async saveSession(): Promise<boolean> {
+    if (!this._browserContextPromise)
+      return false;
+    const { saveSession } = await this._browserContextPromise;
+    if (saveSession) {
+      await saveSession();
+      return true;
+    }
+    return false;
   }
 
   clientSupportsImages(): boolean {

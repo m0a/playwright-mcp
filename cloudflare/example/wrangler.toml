@@ -13,3 +13,7 @@ new_sqlite_classes = ["PlaywrightMCP"]
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
 class_name = "PlaywrightMCP"
+
+[[kv_namespaces]]
+binding = "SESSION_STORAGE"
+id = "adc985d8e536407fb8135b7919ec664e"

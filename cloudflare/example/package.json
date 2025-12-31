@@ -16,7 +16,7 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@cloudflare/playwright-mcp": "^0.0.5"
+    "@cloudflare/playwright-mcp": "file:../"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

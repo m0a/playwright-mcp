@@ -108,6 +108,7 @@ export default defineConfig({
         'yaml',
         'zod',
         'zod-to-json-schema',
+        'debug',
       ]
     },
     commonjsOptions: {
