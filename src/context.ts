@@ -117,9 +117,16 @@ export class Context {
   }
 
   async ensureTab(): Promise<Tab> {
+    const startTime = Date.now();
+    console.error(`[ensureTab] START time=${new Date().toISOString()}`);
     const { browserContext } = await this._ensureBrowserContext();
-    if (!this._currentTab)
+    console.error(`[ensureTab] browserContext ready +${Date.now() - startTime}ms`);
+    if (!this._currentTab) {
+      console.error(`[ensureTab] before newPage +${Date.now() - startTime}ms`);
       await browserContext.newPage();
+      console.error(`[ensureTab] newPage done +${Date.now() - startTime}ms`);
+    }
+    console.error(`[ensureTab] END +${Date.now() - startTime}ms`);
     return this._currentTab!;
   }
 
@@ -342,10 +349,19 @@ ${code.join('\n')}
   }
 
   private async _setupBrowserContext(): Promise<{ browserContext: playwright.BrowserContext, close: () => Promise<void> }> {
+    const startTime = Date.now();
+    console.error(`[_setupBrowserContext] START time=${new Date().toISOString()}`);
+
     // TODO: move to the browser context factory to make it based on isolation mode.
+    console.error(`[_setupBrowserContext] before createContext +${Date.now() - startTime}ms`);
     const result = await this._browserContextFactory.createContext();
+    console.error(`[_setupBrowserContext] createContext done +${Date.now() - startTime}ms`);
+
     const { browserContext } = result;
+    console.error(`[_setupBrowserContext] before setupRequestInterception +${Date.now() - startTime}ms`);
     await this._setupRequestInterception(browserContext);
+    console.error(`[_setupBrowserContext] setupRequestInterception done +${Date.now() - startTime}ms`);
+
     for (const page of browserContext.pages())
       this._onPageCreated(page);
     browserContext.on('page', page => this._onPageCreated(page));
@@ -357,6 +373,7 @@ ${code.join('\n')}
         sources: false,
       });
     }
+    console.error(`[_setupBrowserContext] END +${Date.now() - startTime}ms`);
     return result;
   }
 }

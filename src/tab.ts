@@ -48,7 +48,7 @@ export class Tab {
     page.on('download', download => {
       void this.context.downloadStarted(this, download);
     });
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(30000);
     page.setDefaultTimeout(5000);
   }
 
@@ -71,13 +71,20 @@ export class Tab {
   }
 
   async navigate(url: string) {
+    const startTime = Date.now();
+    console.error(`[navigate] START url=${url} time=${new Date().toISOString()}`);
+
     this._clearCollectedArtifacts();
+    console.error(`[navigate] cleared artifacts +${Date.now() - startTime}ms`);
 
     const downloadEvent = callOnPageNoTrace(this.page, page => page.waitForEvent('download').catch(() => {}));
+    console.error(`[navigate] before goto +${Date.now() - startTime}ms`);
     try {
       await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+      console.error(`[navigate] goto completed +${Date.now() - startTime}ms`);
     } catch (_e: unknown) {
       const e = _e as Error;
+      console.error(`[navigate] goto error: ${e.message} +${Date.now() - startTime}ms`);
       const mightBeDownload =
         e.message.includes('net::ERR_ABORTED') // chromium
         || e.message.includes('Download is starting'); // firefox + webkit
@@ -93,7 +100,9 @@ export class Tab {
     }
 
     // Cap load event to 5 seconds, the page is operational at this point.
+    console.error(`[navigate] before waitForLoadState +${Date.now() - startTime}ms`);
     await this.waitForLoadState('load', { timeout: 5000 });
+    console.error(`[navigate] END +${Date.now() - startTime}ms`);
   }
 
   hasSnapshot(): boolean {

@@ -38,16 +38,23 @@ class CloudflareBrowserContextFactory implements BrowserContextFactory {
   }
 
   async createContext(): Promise<{ browserContext: BrowserContext, close: () => Promise<void>, saveSession?: () => Promise<void> }> {
+    const startTime = Date.now();
+    console.error(`[createContext] START time=${new Date().toISOString()}`);
+
+    console.error(`[createContext] before connectOverCDP +${Date.now() - startTime}ms`);
     const browser = await chromium.connectOverCDP(this.cdpEndpoint);
+    console.error(`[createContext] connectOverCDP done +${Date.now() - startTime}ms`);
 
     // KVからStorage Stateを読み込み
     let storageState: any = undefined;
     if (this.sessionStorage) {
       try {
+        console.error(`[createContext] before KV get +${Date.now() - startTime}ms`);
         const stored = await this.sessionStorage.get(this.sessionKey, 'json');
+        console.error(`[createContext] KV get done +${Date.now() - startTime}ms`);
         if (stored) {
           storageState = stored;
-          console.log('Loaded storage state from KV');
+          console.error('Loaded storage state from KV');
         }
       } catch (e) {
         console.error('Failed to load storage state:', e);
@@ -55,9 +62,11 @@ class CloudflareBrowserContextFactory implements BrowserContextFactory {
     }
 
     // コンテキストを作成（Storage Stateがあれば適用）
+    console.error(`[createContext] before newContext +${Date.now() - startTime}ms`);
     const browserContext = await browser.newContext(
       storageState ? { storageState } : undefined
     );
+    console.error(`[createContext] newContext done +${Date.now() - startTime}ms`);
 
     const sessionStorage = this.sessionStorage;
     const sessionKey = this.sessionKey;
