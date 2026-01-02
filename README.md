@@ -506,3 +506,21 @@ X Y coordinate space, based on the provided screenshot.
 
 
 <!--- End of tools generated section -->
+
+---
+
+## Fork Changes (m0a/playwright-mcp)
+
+This fork includes the following modifications from the upstream [cloudflare/playwright-mcp](https://github.com/cloudflare/playwright-mcp):
+
+### Session Persistence
+- **browser_save_session**: New tool to manually save browser session (cookies, localStorage) to Cloudflare KV storage
+- Sessions are automatically restored on subsequent connections
+
+### Performance & Debugging
+- **Navigation timeout**: Reduced from 60s to 30s for faster failure detection
+- **Debug logging**: Added timing logs (via `console.error`) to track delays in browser operations:
+  - `[createContext]`: CDP connection, KV storage read, context creation
+  - `[ensureTab]`: Browser context setup, new page creation
+  - `[navigate]`: Page goto, waitForLoadState
+- Logs can be monitored with `wrangler tail` for troubleshooting slow operations
