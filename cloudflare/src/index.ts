@@ -42,7 +42,17 @@ class CloudflareBrowserContextFactory implements BrowserContextFactory {
     console.error(`[createContext] START time=${new Date().toISOString()}`);
 
     console.error(`[createContext] before connectOverCDP +${Date.now() - startTime}ms`);
-    const browser = await chromium.connectOverCDP(this.cdpEndpoint);
+
+    // 30秒タイムアウト付きでCDP接続
+    const CDP_TIMEOUT = 30000;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`connectOverCDP timeout after ${CDP_TIMEOUT}ms`)), CDP_TIMEOUT);
+    });
+
+    const browser = await Promise.race([
+      chromium.connectOverCDP(this.cdpEndpoint),
+      timeoutPromise
+    ]);
     console.error(`[createContext] connectOverCDP done +${Date.now() - startTime}ms`);
 
     // KVからStorage Stateを読み込み
