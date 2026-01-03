@@ -10,6 +10,10 @@ binding = "BROWSER"
 tag = "v1"
 new_sqlite_classes = ["PlaywrightMCP"]
 
+[[migrations]]
+tag = "v2"
+deleted_classes = []
+
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
 class_name = "PlaywrightMCP"
