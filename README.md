@@ -519,6 +519,7 @@ This fork includes the following modifications from the upstream [cloudflare/pla
 
 ### Performance & Debugging
 - **Navigation timeout**: Reduced from 60s to 30s for faster failure detection
+- **CDP connection timeout**: Added 30s timeout to `chromium.connectOverCDP()` to prevent indefinite hangs (observed hangs of 5+ hours without timeout)
 - **Debug logging**: Added timing logs (via `console.error`) to track delays in browser operations:
   - `[createContext]`: CDP connection, KV storage read, context creation
   - `[ensureTab]`: Browser context setup, new page creation
