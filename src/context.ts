@@ -105,10 +105,28 @@ export class Context {
   }
 
   async newTab(): Promise<Tab> {
-    const { browserContext } = await this._ensureBrowserContext();
-    const page = await browserContext.newPage();
-    this._currentTab = this._tabs.find(t => t.page === page)!;
-    return this._currentTab;
+    // リトライ機構: ブラウザが閉じられていた場合、コンテキストを再作成
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { browserContext } = await this._ensureBrowserContext();
+        const page = await browserContext.newPage();
+        this._currentTab = this._tabs.find(t => t.page === page)!;
+        return this._currentTab;
+      } catch (e: unknown) {
+        const error = e as Error;
+        const isBrowserClosed = error.message?.includes('Target page, context or browser has been closed') ||
+                                error.message?.includes('browser has been closed');
+        if (isBrowserClosed && attempt === 0) {
+          console.error(`[newTab] browser closed, resetting context for retry`);
+          this._browserContextPromise = undefined;
+          this._currentTab = undefined;
+          this._tabs = [];
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error('Failed to create new tab after retries');
   }
 
   async selectTab(index: number) {
@@ -119,15 +137,36 @@ export class Context {
   async ensureTab(): Promise<Tab> {
     const startTime = Date.now();
     console.error(`[ensureTab] START time=${new Date().toISOString()}`);
-    const { browserContext } = await this._ensureBrowserContext();
-    console.error(`[ensureTab] browserContext ready +${Date.now() - startTime}ms`);
-    if (!this._currentTab) {
-      console.error(`[ensureTab] before newPage +${Date.now() - startTime}ms`);
-      await browserContext.newPage();
-      console.error(`[ensureTab] newPage done +${Date.now() - startTime}ms`);
+
+    // リトライ機構: ブラウザが閉じられていた場合、コンテキストを再作成
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { browserContext } = await this._ensureBrowserContext();
+        console.error(`[ensureTab] browserContext ready +${Date.now() - startTime}ms attempt=${attempt}`);
+        if (!this._currentTab) {
+          console.error(`[ensureTab] before newPage +${Date.now() - startTime}ms`);
+          await browserContext.newPage();
+          console.error(`[ensureTab] newPage done +${Date.now() - startTime}ms`);
+        }
+        console.error(`[ensureTab] END +${Date.now() - startTime}ms`);
+        return this._currentTab!;
+      } catch (e: unknown) {
+        const error = e as Error;
+        const isBrowserClosed = error.message?.includes('Target page, context or browser has been closed') ||
+                                error.message?.includes('browser has been closed');
+        console.error(`[ensureTab] error: ${error.message}, isBrowserClosed=${isBrowserClosed}, attempt=${attempt}`);
+        if (isBrowserClosed && attempt === 0) {
+          // ブラウザが閉じられていた場合、コンテキストをリセットしてリトライ
+          console.error(`[ensureTab] resetting browser context for retry`);
+          this._browserContextPromise = undefined;
+          this._currentTab = undefined;
+          this._tabs = [];
+          continue;
+        }
+        throw e;
+      }
     }
-    console.error(`[ensureTab] END +${Date.now() - startTime}ms`);
-    return this._currentTab!;
+    throw new Error('Failed to ensure tab after retries');
   }
 
   async listTabsMarkdown(): Promise<string> {
